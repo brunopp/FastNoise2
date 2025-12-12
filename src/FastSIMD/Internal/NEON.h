@@ -265,6 +265,36 @@ namespace FastSIMD
 
     
     
+    struct NEON_gradient
+    {
+        NEON_f32x4 noiseVal;
+        NEON_f32x4 grad[3];
+
+        FS_INLINE explicit NEON_gradient()
+        {
+        }
+        FS_INLINE explicit NEON_gradient( NEON_f32x4 noise, NEON_f32x4 x, NEON_f32x4 y, NEON_f32x4 z ) :
+            noiseVal( noise ), grad { x, y, z }
+        {
+        }
+        FS_INLINE explicit NEON_gradient( float noise, float x, float y, float z )
+        {
+            noiseVal = NEON_f32x4( noise );
+            grad[0] = NEON_f32x4( x );
+            grad[1] = NEON_f32x4( y );
+            grad[2] = NEON_f32x4( z );
+        }
+
+        FS_INLINE NEON_f32x4& getNoise()
+        {
+            return noiseVal;
+        }
+
+        FS_INLINE NEON_f32x4& getValue( const int i )
+        {
+            return grad[i % 3];
+        }
+    };
 
     template<eLevel LEVEL_T>
     class NEON_T
@@ -279,6 +309,19 @@ namespace FastSIMD
         typedef NEON_f32x4 float32v;
         typedef NEON_i32x4   int32v;
         typedef NEON_i32x4  mask32v;
+        typedef NEON_gradient gradientv;
+
+        // Gradient access
+
+        FS_INLINE static const float32v& Noise_Grad( const gradientv& g )
+        {
+            return g.noiseVal;
+        }
+
+        FS_INLINE static float32v& GetValue_Grad( gradientv& g, int i )
+        {
+            return g.getValue( i );
+        }
 
         FS_INLINE static float32v Load_f32( void const* p )
         {

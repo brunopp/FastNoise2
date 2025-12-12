@@ -417,4 +417,37 @@ namespace FastNoise
     };
 #endif
     
+    class Gradient : public virtual Generator
+    {
+    public:
+        FASTSIMD_LEVEL_SUPPORT( FastNoise::SUPPORTED_SIMD_LEVELS );
+        const Metadata& GetMetadata() const override;
+
+        void SetSource( SmartNodeArg<> gen )
+        {
+            this->SetSourceMemberVariable( mSource, gen );
+        }
+        void SetScale( float value )
+        {
+            mScale = value;
+        }
+
+    protected:
+        GeneratorSource mSource;
+        float mScale = 1.0f;
+    };
+
+#ifdef FASTNOISE_METADATA
+    template<>
+    struct MetadataT<Gradient> : MetadataT<Generator>
+    {
+        SmartNode<> CreateNode( FastSIMD::eLevel ) const override;
+
+        MetadataT()
+        {
+            groups.push_back( "Modifiers" );
+            this->AddGeneratorSource( "Source", &Gradient::SetSource );
+        }
+    };
+#endif
 }

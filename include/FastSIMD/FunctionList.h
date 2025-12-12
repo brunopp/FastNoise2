@@ -580,6 +580,12 @@
 #define FS_NMaskedMul_i32( ... ) FastSIMD::NMaskedMul_i32<FS>( __VA_ARGS__ )
 
 
+#define FS_Noise_Grad( gradientv ) FS::Noise_Grad( gradientv )
+#define FS_X_Grad( gradientv ) FS::GetValue_Grad( gradientv, 0 )
+#define FS_Y_Grad( gradientv ) FS::GetValue_Grad( gradientv, 1 )
+#define FS_Z_Grad( gradientv ) FS::GetValue_Grad( gradientv, 2 )
+
+
 namespace FastSIMD
 {
     //FMA

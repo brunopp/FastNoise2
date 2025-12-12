@@ -275,3 +275,21 @@ class FS_T<FastNoise::GeneratorCache, FS> : public virtual FastNoise::GeneratorC
         return FS_Load_f32( &CachedValue );
     }
 };
+
+template<typename FS>
+class FS_T<FastNoise::Gradient, FS> : public virtual FastNoise::Gradient, public FS_T<FastNoise::Generator, FS>
+{
+    FASTSIMD_DECLARE_FS_TYPES;
+    FASTNOISE_IMPL_GEN_T;
+
+    template<typename... P>
+    FS_INLINE float32v GenT( int32v seed, P... pos ) const
+    {
+        gradientv grad = this->GetSourceValueD( mSource, seed, ( pos * float32v( mScale ) )... );
+        float32v xv = FS_X_Grad( grad );
+        float32v yv = FS_Y_Grad( grad );
+        float32v len = FS_Sqrt_f32( xv * xv + yv * yv );
+
+        return len;
+    }
+};

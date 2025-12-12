@@ -222,6 +222,37 @@ namespace FastSIMD
 
     FASTSIMD_INTERNAL_OPERATORS_INT( AVX512_i32x16, int32_t )
 
+    struct AVX512_gradient
+    {
+        AVX512_f32x16 noiseVal;
+        AVX512_f32x16 grad[3];
+
+        FS_INLINE explicit AVX512_gradient()
+        {
+        }
+        FS_INLINE explicit AVX512_gradient( AVX512_f32x16 noise, AVX512_f32x16 x, AVX512_f32x16 y, AVX512_f32x16 z ) :
+            noiseVal( noise ), grad { x, y, z }
+        {
+        }
+        FS_INLINE explicit AVX512_gradient( float noise, float x, float y, float z )
+        {
+            noiseVal = AVX512_f32x16( noise );
+            grad[0] = AVX512_f32x16( x );
+            grad[1] = AVX512_f32x16( y );
+            grad[2] = AVX512_f32x16( z );
+        }
+
+        FS_INLINE AVX512_f32x16& getNoise()
+        {
+            return noiseVal;
+        }
+
+        FS_INLINE AVX512_f32x16& getValue( const int i )
+        {
+            return grad[i % 3];
+        }
+    };
+
     template<eLevel LEVEL_T>
     class AVX512_T
     {
@@ -236,6 +267,19 @@ namespace FastSIMD
         typedef AVX512_f32x16  float32v;
         typedef AVX512_i32x16  int32v;
         typedef __mmask16      mask32v;
+        typedef AVX512_gradient gradientv;
+
+        // Gradient access
+
+        FS_INLINE static const float32v& Noise_Grad( const gradientv& g )
+        {
+            return g.noiseVal;
+        }
+
+        FS_INLINE static float32v& GetValue_Grad( gradientv& g, int i )
+        {
+            return g.getValue( i );
+        }
 
         // Load
 

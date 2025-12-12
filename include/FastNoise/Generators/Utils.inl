@@ -20,6 +20,7 @@ namespace FastNoise
         using float32v = typename FS::float32v;
         using int32v = typename FS::int32v;
         using mask32v = typename FS::mask32v;
+        using gradientv = typename FS::gradientv;
 
         static constexpr float ROOT2 = 1.4142135623730950488f;
         static constexpr float ROOT3 = 1.7320508075688772935f;
@@ -175,6 +176,54 @@ namespace FastNoise
             
             return FS_FMulAdd_f32( float32v( 1.0f + ROOT2 ), a, b );
         }
+        template<typename SIMD = FS, std::enable_if_t<SIMD::SIMD_Level < FastSIMD::Level_AVX2>* = nullptr>
+        FS_INLINE static float32v GetGradientDotC( int32v hash, float32v fX, float32v fY, float32v& gX, float32v& gY )
+        {
+            // ( 1+R2, 1 ) ( -1-R2, 1 ) ( 1+R2, -1 ) ( -1-R2, -1 )
+            // ( 1, 1+R2 ) ( 1, -1-R2 ) ( -1, 1+R2 ) ( -1, -1-R2 )
+
+            int32v  bit1 = (hash << 31);
+            int32v  bit2 = (hash >> 1) << 31;
+            mask32v bit4;
+
+            if constexpr( FS::SIMD_Level == FastSIMD::Level_Scalar )
+            {
+                bit4 = int32_t( hash & int32v( 1 << 2 ) ) != 0;
+            }
+            else
+            {
+                bit4 = hash << 29;
+
+                if constexpr( FS::SIMD_Level < FastSIMD::Level_SSE41 )
+                {
+                    bit4 >>= 31;
+                }
+            }
+
+            fX ^= FS_Casti32_f32( bit1 );
+            fY ^= FS_Casti32_f32( bit2 );
+            
+            float32v a = FS_Select_f32( bit4, fY, fX );
+            float32v b = FS_Select_f32( bit4, fX, fY );
+
+            // -- START: AI GEN
+            float32v sX = FS_Select_f32( bit1, float32v( -1.0f ), float32v( 1.0f ) );
+            float32v sY = FS_Select_f32( bit2, float32v( -1.0f ), float32v( 1.0f ) );
+
+            gX = FS_Select_f32(
+                bit4,
+                float32v( 1.0f ) * sX,
+                float32v( 1.0f + ROOT2 ) * sX );
+
+            gY = FS_Select_f32(
+                bit4,
+                float32v( 1.0f + ROOT2 ) * sY,
+                float32v( 1.0f ) * sY );
+            // -- END: AI GEN
+            
+            return FS_FMulAdd_f32( float32v( 1.0f + ROOT2 ), a, b );
+        }
+
         template<typename SIMD = FS, std::enable_if_t<SIMD::SIMD_Level == FastSIMD::Level_NEON> * = nullptr>
          FS_INLINE static float32v GetGradientDot( int32v hash, float32v fX, float32v fY )
         {
@@ -217,11 +266,29 @@ namespace FastNoise
             return FS_FMulAdd_f32( gX, fX, fY * gY );
         }
 
+        template<typename SIMD = FS, std::enable_if_t<SIMD::SIMD_Level == FastSIMD::Level_AVX2>* = nullptr>
+        FS_INLINE static float32v GetGradientDotC( int32v hash, float32v fX, float32v fY, float32v& gX, float32v& gY )
+        {
+            gX = _mm256_permutevar8x32_ps( float32v( 1 + ROOT2, -1 - ROOT2, 1 + ROOT2, -1 - ROOT2, 1, -1, 1, -1 ), hash );
+            gY = _mm256_permutevar8x32_ps( float32v( 1, 1, -1, -1, 1 + ROOT2, 1 + ROOT2, -1 - ROOT2, -1 - ROOT2 ), hash );
+
+            return FS_FMulAdd_f32( gX, fX, fY * gY );
+        }
+
         template<typename SIMD = FS, std::enable_if_t<SIMD::SIMD_Level == FastSIMD::Level_AVX512> * = nullptr>
          FS_INLINE static float32v GetGradientDot( int32v hash, float32v fX, float32v fY )
         {
             float32v gX = _mm512_permutexvar_ps( hash, float32v( 1 + ROOT2, -1 - ROOT2, 1 + ROOT2, -1 - ROOT2, 1, -1, 1, -1, 1 + ROOT2, -1 - ROOT2, 1 + ROOT2, -1 - ROOT2, 1, -1, 1, -1 ) );
             float32v gY = _mm512_permutexvar_ps( hash, float32v( 1, 1, -1, -1, 1 + ROOT2, 1 + ROOT2, -1 - ROOT2, -1 - ROOT2, 1, 1, -1, -1, 1 + ROOT2, 1 + ROOT2, -1 - ROOT2, -1 - ROOT2 ) );
+
+            return FS_FMulAdd_f32( gX, fX, fY * gY );
+        }
+
+        template<typename SIMD = FS, std::enable_if_t<SIMD::SIMD_Level == FastSIMD::Level_AVX512>* = nullptr>
+        FS_INLINE static float32v GetGradientDotC( int32v hash, float32v fX, float32v fY, float32v& gX, float32v& gY )
+        {
+            gX = _mm512_permutexvar_ps( hash, float32v( 1 + ROOT2, -1 - ROOT2, 1 + ROOT2, -1 - ROOT2, 1, -1, 1, -1, 1 + ROOT2, -1 - ROOT2, 1 + ROOT2, -1 - ROOT2, 1, -1, 1, -1 ) );
+            gY = _mm512_permutexvar_ps( hash, float32v( 1, 1, -1, -1, 1 + ROOT2, 1 + ROOT2, -1 - ROOT2, -1 - ROOT2, 1, 1, -1, -1, 1 + ROOT2, 1 + ROOT2, -1 - ROOT2, -1 - ROOT2 ) );
 
             return FS_FMulAdd_f32( gX, fX, fY * gY );
         }

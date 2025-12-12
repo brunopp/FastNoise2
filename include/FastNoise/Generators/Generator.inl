@@ -17,11 +17,17 @@ public:
     virtual float32v FS_VECTORCALL Gen( int32v seed, float32v x, float32v y ) const = 0;
     virtual float32v FS_VECTORCALL Gen( int32v seed, float32v x, float32v y, float32v z ) const = 0;
     virtual float32v FS_VECTORCALL Gen( int32v seed, float32v x, float32v y, float32v z, float32v w ) const { return Gen( seed, x, y, z ); };
+    virtual gradientv FS_VECTORCALL GenD( int32v seed, float32v x, float32v y ) const { return gradientv {}; };
+    virtual gradientv FS_VECTORCALL GenD( int32v seed, float32v x, float32v y, float32v z ) const { return gradientv {}; };
+    virtual gradientv FS_VECTORCALL GenD( int32v seed, float32v x, float32v y, float32v z, float32v w ) const { return gradientv {}; };
 
 #define FASTNOISE_IMPL_GEN_T\
     float32v FS_VECTORCALL Gen( int32v seed, float32v x, float32v y ) const override { return GenT( seed, x, y ); }\
     float32v FS_VECTORCALL Gen( int32v seed, float32v x, float32v y, float32v z ) const override { return GenT( seed, x, y, z ); }\
-    float32v FS_VECTORCALL Gen( int32v seed, float32v x, float32v y, float32v z, float32v w ) const override { return GenT( seed, x, y, z, w ); }
+    float32v FS_VECTORCALL Gen( int32v seed, float32v x, float32v y, float32v z, float32v w ) const override { return GenT( seed, x, y, z, w ); }\
+    gradientv FS_VECTORCALL GenD( int32v seed, float32v x, float32v y ) const override { return gradientv{}; }\
+    gradientv FS_VECTORCALL GenD( int32v seed, float32v x, float32v y, float32v z ) const override { return gradientv{}; }\
+    gradientv FS_VECTORCALL GenD( int32v seed, float32v x, float32v y, float32v z, float32v w ) const override { return gradientv{}; }
 
     FastSIMD::eLevel GetSIMDLevel() const final
     {
@@ -62,6 +68,27 @@ public:
         auto simdGen = reinterpret_cast<VoidPtrStorageType>( memberVariable.simdGeneratorPtr );
 
         return simdGen->Gen( seed, pos... );
+    }
+
+    template<typename T, typename... POS>
+    FS_INLINE gradientv FS_VECTORCALL GetSourceValueD( const FastNoise::HybridSourceT<T>& memberVariable, int32v seed, POS... pos ) const
+    {
+        if( memberVariable.simdGeneratorPtr )
+        {
+            auto simdGen = reinterpret_cast<VoidPtrStorageType>( memberVariable.simdGeneratorPtr );
+
+            return simdGen->GenD( seed, pos... );
+        }
+        return gradientv { float32v( memberVariable.constant ) };
+    }
+
+    template<typename T, typename... POS>
+    FS_INLINE gradientv FS_VECTORCALL GetSourceValueD( const FastNoise::GeneratorSourceT<T>& memberVariable, int32v seed, POS... pos ) const
+    {
+        assert( memberVariable.simdGeneratorPtr );
+        auto simdGen = reinterpret_cast<VoidPtrStorageType>( memberVariable.simdGeneratorPtr );
+
+        return simdGen->GenD( seed, pos... );
     }
 
     template<typename T>

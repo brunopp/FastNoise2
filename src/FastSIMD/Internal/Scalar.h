@@ -232,6 +232,37 @@ namespace FastSIMD
         }
     };
 
+    struct Scalar_gradient
+    {
+        Scalar_Float noiseVal;
+        Scalar_Float grad[3];
+
+        FS_INLINE explicit Scalar_gradient()
+        {
+        }
+        FS_INLINE explicit Scalar_gradient( Scalar_Float noise, Scalar_Float x, Scalar_Float y, Scalar_Float z ) :
+            noiseVal( noise ), grad { x, y, z }
+        {
+        }
+        FS_INLINE explicit Scalar_gradient( float noise, float x, float y, float z )
+        {
+            noiseVal = Scalar_Float( noise );
+            grad[0] = Scalar_Float( x );
+            grad[1] = Scalar_Float( y );
+            grad[2] = Scalar_Float( z );
+        }
+
+        FS_INLINE Scalar_Float& getNoise()
+        {
+            return noiseVal;
+        }
+
+        FS_INLINE Scalar_Float& getValue( const int i )
+        {
+            return grad[i % 3];
+        }
+    };
+
     class Scalar
     {
     public:
@@ -243,6 +274,19 @@ namespace FastSIMD
         typedef Scalar_Float float32v;
         typedef Scalar_Int   int32v;
         typedef Scalar_Mask  mask32v;
+        typedef Scalar_gradient gradientv;
+
+        // Gradient access
+
+        FS_INLINE static const float32v& Noise_Grad( const gradientv& g )
+        {
+            return g.noiseVal;
+        }
+
+        FS_INLINE static float32v& GetValue_Grad( gradientv& g, int i )
+        {
+            return g.getValue( i );
+        }
 
         // Load
 

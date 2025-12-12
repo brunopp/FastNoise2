@@ -7,4 +7,5 @@ class FS_T;
 #define FASTSIMD_DECLARE_FS_TYPES \
 using float32v = typename FS::float32v;\
 using int32v   = typename FS::int32v;\
-using mask32v  = typename FS::mask32v
+using mask32v  = typename FS::mask32v;\
+using gradientv = typename FS::gradientv

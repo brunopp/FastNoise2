@@ -236,6 +236,37 @@ namespace FastSIMD
 
     FASTSIMD_INTERNAL_OPERATORS_INT_TEMPLATED( SSE_i32x4, int32_t )
 
+    struct SSE_gradient
+    {
+        SSE_f32x4 noiseVal;
+        SSE_f32x4 grad[3];
+
+        FS_INLINE explicit SSE_gradient()
+        {
+        }
+        FS_INLINE explicit SSE_gradient( SSE_f32x4 noise, SSE_f32x4 x, SSE_f32x4 y, SSE_f32x4 z ) :
+            noiseVal( noise ), grad { x, y, z }
+        {
+        }
+        FS_INLINE explicit SSE_gradient( float noise, float x, float y, float z )
+        {
+            noiseVal = SSE_f32x4( noise );
+            grad[0] = SSE_f32x4( x );
+            grad[1] = SSE_f32x4( y );
+            grad[2] = SSE_f32x4( z );
+        }
+
+        FS_INLINE SSE_f32x4& getNoise()
+        {
+            return noiseVal;
+        }
+
+        FS_INLINE SSE_f32x4& getValue( const int i )
+        {
+            return grad[i % 3];
+        }
+    };
+
     template<eLevel LEVEL_T>
     class SSE_T
     {
@@ -250,6 +281,19 @@ namespace FastSIMD
         typedef SSE_f32x4          float32v;
         typedef SSE_i32x4<LEVEL_T> int32v;
         typedef SSE_i32x4<LEVEL_T> mask32v;
+        typedef SSE_gradient gradientv;
+
+        // Gradient access
+
+        FS_INLINE static const float32v& Noise_Grad( const gradientv& g )
+        {
+            return g.noiseVal;
+        }
+
+        FS_INLINE static float32v& GetValue_Grad( gradientv& g, int i )
+        {
+            return g.getValue( i );
+        }
 
         // Load
 
