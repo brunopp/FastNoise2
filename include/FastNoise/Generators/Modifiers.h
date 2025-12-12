@@ -3,6 +3,17 @@
 
 namespace FastNoise
 {
+    enum class GradientFunction
+    {
+        Analytical,
+        FiniteDifferences,
+    };
+
+    constexpr static const char* kGradientFunction_Strings[] = {
+        "Analytical",
+        "Finite Differences",
+    };
+
     class DomainScale : public virtual Generator
     {
     public:
@@ -427,6 +438,10 @@ namespace FastNoise
         {
             this->SetSourceMemberVariable( mSource, gen );
         }
+        void SetMethod( GradientFunction method )
+        {
+            mMethod = method;
+        }
         void SetScale( float value )
         {
             mScale = value;
@@ -434,6 +449,7 @@ namespace FastNoise
 
     protected:
         GeneratorSource mSource;
+        GradientFunction mMethod = GradientFunction::Analytical;
         float mScale = 1.0f;
     };
 
@@ -447,6 +463,7 @@ namespace FastNoise
         {
             groups.push_back( "Modifiers" );
             this->AddGeneratorSource( "Source", &Gradient::SetSource );
+            this->AddVariableEnum( "Method", GradientFunction::Analytical, &Gradient::SetMethod, kGradientFunction_Strings );
         }
     };
 #endif

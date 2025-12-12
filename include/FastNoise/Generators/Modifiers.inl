@@ -282,14 +282,38 @@ class FS_T<FastNoise::Gradient, FS> : public virtual FastNoise::Gradient, public
     FASTSIMD_DECLARE_FS_TYPES;
     FASTNOISE_IMPL_GEN_T;
 
-    template<typename... P>
-    FS_INLINE float32v GenT( int32v seed, P... pos ) const
+    template<typename P>
+    FS_INLINE float32v GenT( int32v seed, P x, P y ) const
     {
-        gradientv grad = this->GetSourceValueD( mSource, seed, ( pos * float32v( mScale ) )... );
-        float32v xv = FS_X_Grad( grad );
-        float32v yv = FS_Y_Grad( grad );
-        float32v len = FS_Sqrt_f32( xv * xv + yv * yv );
+        if( mMethod == FastNoise::GradientFunction::Analytical )
+        {
+            gradientv grad = this->GetSourceValueD( mSource, seed, x, y );
+            float32v xv = FS_X_Grad( grad );
+            float32v yv = FS_Y_Grad( grad );
+            float32v len = FS_Sqrt_f32( xv * xv + yv * yv );
 
-        return len;
+            return len;
+        }
+        else
+        {
+            float32v h = float32v( 0.0001f );
+            float32v dfdx = ( ( this->GetSourceValue( mSource, seed, x + h, y ) ) - ( this->GetSourceValue( mSource, seed, x - h, y ) ) ) / ( float32v( 2.0f ) * h );
+            float32v dfdy = ( ( this->GetSourceValue( mSource, seed, x, y + h ) ) - ( this->GetSourceValue( mSource, seed, x, y - h ) ) ) / ( float32v( 2.0f ) * h );
+
+            float32v len = FS_Sqrt_f32( dfdx * dfdx + dfdy * dfdy );
+
+            return float32v( len );
+        }
+    }
+
+    template<typename P>
+    FS_INLINE float32v GenT( int32v seed, P x, P y, P z ) const
+    {
+        return GenT( seed, x, y );
+    }
+    template<typename P>
+    FS_INLINE float32v GenT( int32v seed, P x, P y, P z, P w ) const
+    {
+        return GenT( seed, x, y );
     }
 };
