@@ -442,15 +442,10 @@ namespace FastNoise
         {
             mMethod = method;
         }
-        void SetScale( float value )
-        {
-            mScale = value;
-        }
 
     protected:
         GeneratorSource mSource;
         GradientFunction mMethod = GradientFunction::Analytical;
-        float mScale = 1.0f;
     };
 
 #ifdef FASTNOISE_METADATA

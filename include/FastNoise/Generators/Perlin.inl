@@ -72,18 +72,18 @@ class FS_T<FastNoise::Perlin, FS> : public virtual FastNoise::Perlin, public FS_
         float32v g1 = FnUtils::GetGradientDotC( h1, xf1, yf0, gX[1], gY[1] ); // 					= gX * xf1 + yf0 * gY
         float32v g2 = FnUtils::GetGradientDotC( h2, xf0, yf1, gX[2], gY[2] ); // 					= gX * xf0 + yf1 * gY
         float32v g3 = FnUtils::GetGradientDotC( h3, xf1, yf1, gX[3], gY[3] ); // 					= gX * xf1 + yf1 * gY
-        //g1dx 	= (gX*fX + fY*gY)'
+        //g0dx 	= (gX*fX + fY*gY)'
         //		= (gX*fX)' + (fY*gY)'
         //		= (gX'*fX)+(gX*fX') + (fY'*gY)+(fY*gY')
         //		= (0*fX)+(gX*1) + (0*gY)+(fY*0)
         //		= gX
         //		= gX[0]
-        //g1dy 	= (gX*fX + fY*gY)'
+        //g0dy 	= (gX*fX + fY*gY)'
         //		= (gX*fX)' + (fY*gY)'
         //		= (gX'*fX)+(gX*fX') + (fY'*gY)+(fY*gY')
         //		= (0*fX)+(gX*0) + (1*gY)+(fY*0)
         //		= gY
-        //		= gX[0]
+        //		= gY[0]
 
         float32v g0dx = gX[0];
         float32v g0dy = gY[0];
