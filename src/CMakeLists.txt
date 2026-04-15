@@ -16,26 +16,33 @@ file(GLOB FastNoise_headers "../include/FastNoise/*.h")
 file(GLOB FastNoise_inl "../include/FastNoise/*.inl")
 file(GLOB_RECURSE FastNoise_generators_headers "../include/FastNoise/Generators/*.h")
 file(GLOB_RECURSE FastNoise_generators_inl "../include/FastNoise/Generators/*.inl")
+file(GLOB FastNoise_utility_headers "../include/FastNoise/Utility/*.h")
 
 set(install_fastnoise_headers ${FastNoise_headers} PARENT_SCOPE)
 set(install_fastnoise_generators_headers ${FastNoise_generators_headers} PARENT_SCOPE)
+set(install_fastnoise_utility_headers ${FastNoise_utility_headers} PARENT_SCOPE)
 
 list(APPEND FastNoise_headers ${FastNoise_inl})
 list(APPEND FastNoise_generators_headers ${FastNoise_generators_inl})
+list(APPEND FastNoise_utility_headers ${FastNoise_inl})
 
 set(FastNoise_source
     FastNoise/Metadata.cpp
     FastNoise/SmartNode.cpp
-    FastNoise/FastNoise_C.cpp)
+    FastNoise/FastNoise_C.cpp
+    FastNoise/FastSIMD_Build.inl
+    FastNoise/Base64.h)
 
 source_group("FastNoise" FILES ${FastNoise_headers})
 source_group("FastNoise" FILES ${FastNoise_source})
 source_group("FastNoise/Generators" FILES ${FastNoise_generators_headers})
+source_group("FastNoise/Utility" FILES ${FastNoise_utility_headers})
 
 add_library(FastNoise
     ${FastNoise_headers}
     ${FastNoise_source}
     ${FastNoise_generators_headers}
+    ${FastNoise_utility_headers}
     ${FastSIMD_headers}
     ${FastSIMD_internal_headers}
     ${FastSIMD_sources}

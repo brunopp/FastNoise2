@@ -407,3 +407,55 @@ class FastSIMD::DispatchClass<DomainRotatePlane, SIMD> final : public virtual Do
         return this->GetSourceValue( mSource, seed, x, y, z, w );
     }
 };
+
+#include <iostream>
+
+template<FastSIMD::FeatureSet SIMD>
+class FastSIMD::DispatchClass<GradientDerivative, SIMD> final : public virtual GradientDerivative, public DispatchClass<Generator, SIMD>
+{
+    FASTNOISE_IMPL_GEN_T;
+
+    template<typename P>
+    FS_FORCEINLINE float32v GenT( int32v seed, P x, P y ) const
+    {
+        return this->GetSourceValue( mSource, seed, x, y );
+        //if( mMethod == FastNoise::GradientDerivativeFunction::Analytical )
+        //{
+        //    gradientv grad = this->GetSourceValueD( mSource, seed, x, y );
+        //    float32v xv = grad.X();
+        //    float32v yv = grad.Y();
+        //    float32v len = FS::Sqrt( xv * xv + yv * yv );
+
+        //    return len;
+        //}
+        //else
+        //{
+        //    float32v h = float32v( 0.0001f * 100 );
+        //    float32v a = this->GetSourceValue( mSource, seed, x + h, y );
+        //    float32v b = this->GetSourceValue( mSource, seed, x - h, y );
+        //    float32v c = this->GetSourceValue( mSource, seed, x, y + h );
+        //    float32v d = this->GetSourceValue( mSource, seed, x, y - h );
+
+
+        //    float32v dfdx = ( a-b ) / ( float32v( 2.0f ) * h );
+        //    float32v dfdy = ( c-d ) / ( float32v( 2.0f ) * h );
+
+        //    float32v len = FS::Sqrt( dfdx * dfdx + dfdy * dfdy );
+
+        //    //::cout << "," << FS::Extract0<float>(len);
+
+        //    return float32v( len );
+        //}
+    }
+
+    template<typename P>
+    FS_FORCEINLINE float32v GenT( int32v seed, P x, P y, P z ) const
+    {
+        return GenT( seed, x, y );
+    }
+    template<typename P>
+    FS_FORCEINLINE float32v GenT( int32v seed, P x, P y, P z, P w ) const
+    {
+        return GenT( seed, x, y );
+    }
+};

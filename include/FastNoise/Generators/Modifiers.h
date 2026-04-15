@@ -582,5 +582,53 @@ namespace FastNoise
         }
     };
 #endif
-    
+
+    enum class GradientDerivativeFunction
+    {
+        Analytical,
+        FiniteDifferences,
+    };
+
+    constexpr static const char* kGradientDerivativeFunction_Strings[] = {
+        "Analytical",
+        "Finite Differences",
+    };
+
+    class GradientDerivative : public virtual Generator
+    {
+    public:
+        const Metadata& GetMetadata() const override;
+
+        void SetSource( SmartNodeArg<> gen )
+        {
+            this->SetSourceMemberVariable( mSource, gen );
+        }
+        void SetMethod( GradientDerivativeFunction method )
+        {
+            mMethod = method;
+        }
+
+    protected:
+        GeneratorSource mSource;
+        GradientDerivativeFunction mMethod = GradientDerivativeFunction::Analytical;
+    };
+
+#ifdef FASTNOISE_METADATA
+    template<>
+    struct MetadataT<GradientDerivative> : MetadataT<Generator>
+    {
+        SmartNode<> CreateNode( FastSIMD::FeatureSet ) const override;
+
+        MetadataT()
+        {
+            groups.push_back( "Modifiers" );
+            this->AddGeneratorSource( "Source", &GradientDerivative::SetSource );
+            this->AddVariableEnum( "Method", GradientDerivativeFunction::Analytical, &GradientDerivative::SetMethod, kGradientDerivativeFunction_Strings );
+
+            description =
+                "Returns the gradient (derivative).";
+        }
+    };
+#endif
+
 }

@@ -12,6 +12,28 @@ using float32v = FS::Register<float, kRegisterSize>;
 using int32v = FS::Register<std::int32_t, kRegisterSize>;
 using mask32v = typename float32v::MaskType;
 
+struct gradientv {
+    float32v noise;
+    float32v gradient[3];
+
+    gradientv()
+    {
+    }
+    gradientv( float32v noise, float32v x, float32v y, float32v z ) :
+        noise( noise ), gradient { x, y, z }
+    {
+    }
+
+    float32v X()
+    {
+        return gradient[0];
+    }
+    float32v Y()
+    {
+        return gradient[0];
+    }
+};
+
 template<FastSIMD::FeatureSet SIMD>
 class FastSIMD::DispatchClass<Generator, SIMD> : public virtual Generator
 {
@@ -19,11 +41,17 @@ public:
     virtual float32v FS_VECTORCALL Gen( int32v seed, float32v x, float32v y ) const = 0;
     virtual float32v FS_VECTORCALL Gen( int32v seed, float32v x, float32v y, float32v z ) const = 0;
     virtual float32v FS_VECTORCALL Gen( int32v seed, float32v x, float32v y, float32v z, float32v w ) const { return Gen( seed, x, y, z ); }
+    virtual gradientv FS_VECTORCALL GenD( int32v seed, float32v x, float32v y ) const { return gradientv {}; };
+    virtual gradientv FS_VECTORCALL GenD( int32v seed, float32v x, float32v y, float32v z ) const { return gradientv {}; };
+    virtual gradientv FS_VECTORCALL GenD( int32v seed, float32v x, float32v y, float32v z, float32v w ) const { return gradientv {}; };
 
 #define FASTNOISE_IMPL_GEN_T\
     float32v FS_VECTORCALL Gen( int32v seed, float32v x, float32v y ) const override { return GenT( seed, x, y ); }\
     float32v FS_VECTORCALL Gen( int32v seed, float32v x, float32v y, float32v z ) const override { return GenT( seed, x, y, z ); }\
-    float32v FS_VECTORCALL Gen( int32v seed, float32v x, float32v y, float32v z, float32v w ) const override { return GenT( seed, x, y, z, w ); }
+    float32v FS_VECTORCALL Gen( int32v seed, float32v x, float32v y, float32v z, float32v w ) const override { return GenT( seed, x, y, z, w ); }\
+    gradientv FS_VECTORCALL GenD( int32v seed, float32v x, float32v y ) const override { return gradientv{}; }\
+    gradientv FS_VECTORCALL GenD( int32v seed, float32v x, float32v y, float32v z ) const override { return gradientv{}; }\
+    gradientv FS_VECTORCALL GenD( int32v seed, float32v x, float32v y, float32v z, float32v w ) const override { return gradientv{}; }
 
     FastSIMD::FeatureSet GetActiveFeatureSet() const final
     {
@@ -64,6 +92,27 @@ public:
         auto simdGen = reinterpret_cast<VoidPtrStorageType>( memberVariable.simdGeneratorPtr );
 
         return simdGen->Gen( seed, pos... );
+    }
+
+    template<typename T, typename... POS>
+    static FS_FORCEINLINE gradientv FS_VECTORCALL GetSourceValueD( const FastNoise::HybridSourceT<T>& memberVariable, int32v seed, POS... pos )
+    {
+        if( memberVariable.simdGeneratorPtr )
+        {
+            auto simdGen = reinterpret_cast<VoidPtrStorageType>( memberVariable.simdGeneratorPtr );
+
+            return simdGen->GenD( seed, pos... );
+        }
+        return gradientv { float32v( memberVariable.constant ) };
+    }
+
+    template<typename T, typename... POS>
+    static FS_FORCEINLINE gradientv FS_VECTORCALL GetSourceValueD( const FastNoise::GeneratorSourceT<T>& memberVariable, int32v seed, POS... pos )
+    {
+        assert( memberVariable.simdGeneratorPtr );
+        auto simdGen = reinterpret_cast<VoidPtrStorageType>( memberVariable.simdGeneratorPtr );
+
+        return simdGen->GenD( seed, pos... );
     }
 
     template<typename T>

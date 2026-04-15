@@ -189,6 +189,38 @@ namespace FastNoise
             return FS::FMulAdd( float32v( 1.0f + kRoot2f ), u, v );
         }
     }
+
+    template<FastSIMD::FeatureSet SIMD = FastSIMD::FeatureSetDefault()>
+    FS_FORCEINLINE static float32v GetGradientDotPerlinC( int32v hash, float32v fX, float32v fY, float32v& gX, float32v& gY )
+    {
+        // ( 1+R2, 1 ) ( -1-R2, 1 ) ( 1+R2, -1 ) ( -1-R2, -1 )
+        // ( 1, 1+R2 ) ( 1, -1-R2 ) ( -1, 1+R2 ) ( -1, -1-R2 )
+
+        if constexpr( SIMD & FastSIMD::FeatureFlag::AVX512_F )
+        {
+            gX = FS::NativeExec<float32v>( FS_BIND_INTRINSIC( _mm512_permutexvar_ps ), hash, FS::Constant<float>( 1 + kRoot2f, -1 - kRoot2f, 1 + kRoot2f, -1 - kRoot2f, 1, -1, 1, -1, 1 + kRoot2f, -1 - kRoot2f, 1 + kRoot2f, -1 - kRoot2f, 1, -1, 1, -1 ) );
+            gY = FS::NativeExec<float32v>( FS_BIND_INTRINSIC( _mm512_permutexvar_ps ), hash, FS::Constant<float>( 1, 1, -1, -1, 1 + kRoot2f, 1 + kRoot2f, -1 - kRoot2f, -1 - kRoot2f, 1, 1, -1, -1, 1 + kRoot2f, 1 + kRoot2f, -1 - kRoot2f, -1 - kRoot2f ) );
+
+            return FS::FMulAdd( gX, fX, fY * gY );
+        }
+        else if constexpr( SIMD & FastSIMD::FeatureFlag::AVX2 )
+        {
+            gX = FS::NativeExec<float32v>( FS_BIND_INTRINSIC( _mm256_permutevar8x32_ps ), FS::Constant<float>( 1 + kRoot2f, -1 - kRoot2f, 1 + kRoot2f, -1 - kRoot2f, 1, -1, 1, -1 ), hash );
+            gY = FS::NativeExec<float32v>( FS_BIND_INTRINSIC( _mm256_permutevar8x32_ps ), FS::Constant<float>( 1, 1, -1, -1, 1 + kRoot2f, 1 + kRoot2f, -1 - kRoot2f, -1 - kRoot2f ), hash );
+
+            return FS::FMulAdd( gX, fX, fY * gY );
+        }
+        else
+        {
+            fX ^= FS::Cast<float>( hash << 31 );
+            fY ^= FS::Cast<float>( ( hash >> 1 ) << 31 );
+
+            float32v u = FS::SelectHighBit( hash << 29, fY, fX );
+            float32v v = FS::SelectHighBit( hash << 29, fX, fY );
+
+            return FS::FMulAdd( float32v( 1.0f + kRoot2f ), u, v );
+        }
+    }
     
     template<FastSIMD::FeatureSet SIMD = FastSIMD::FeatureSetDefault()>
     FS_FORCEINLINE static float32v GetGradientDotPerlin( int32v hash, float32v fX, float32v fY, float32v fZ, float32v fW )

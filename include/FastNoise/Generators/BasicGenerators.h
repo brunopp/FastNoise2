@@ -181,7 +181,7 @@ namespace FastNoise
     };
 #endif
 
-    class Gradient : public virtual Generator
+    class Gradient : public virtual VariableRange<Seeded<Generator>>
     {
     public:
         const Metadata& GetMetadata() const override;
